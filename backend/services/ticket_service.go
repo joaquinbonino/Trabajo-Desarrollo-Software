@@ -8,13 +8,14 @@ import (
 )
 
 type ticketService struct {
-	ticketDAO dao.ITicketDAO
-	eventDAO  dao.IEventDAO
-	userDAO   dao.IUserDAO
+	ticketDAO   dao.ITicketDAO
+	eventDAO    dao.IEventDAO
+	userDAO     dao.IUserDAO
+	waitlistDAO dao.IWaitlistDAO
 }
 
-func NewTicketService(td dao.ITicketDAO, ed dao.IEventDAO, ud dao.IUserDAO) ITicketService {
-	return &ticketService{ticketDAO: td, eventDAO: ed, userDAO: ud}
+func NewTicketService(td dao.ITicketDAO, ed dao.IEventDAO, ud dao.IUserDAO, wd dao.IWaitlistDAO) ITicketService {
+	return &ticketService{ticketDAO: td, eventDAO: ed, userDAO: ud, waitlistDAO: wd}
 }
 
 func (s *ticketService) BuyTicket(userID uint, req domain.BuyTicketRequest) (*domain.TicketResponse, error) {
@@ -86,15 +87,40 @@ func (s *ticketService) CancelTicket(ticketID, userID uint) error {
 	if err != nil {
 		return errors.New("evento no encontrado")
 	}
-	if event.EntradasVendidas > 0 {
-		event.EntradasVendidas--
-	}
-	if err := s.eventDAO.Update(event); err != nil {
+
+	ticket.Estado = "cancelado"
+	if err := s.ticketDAO.Update(ticket); err != nil {
 		return err
 	}
 
-	ticket.Estado = "cancelado"
-	return s.ticketDAO.Update(ticket)
+	// Si hay alguien en la lista de espera, el cupo liberado se le asigna
+	// automáticamente al primero (FIFO): se le crea un ticket activo y su
+	// anotación pasa a "asignado". EntradasVendidas no cambia porque la butaca
+	// no vuelve al stock. Solo si la lista está vacía se libera el cupo.
+	entry, err := s.waitlistDAO.FindFirstPending(ticket.EventID)
+	if err != nil {
+		return err
+	}
+	if entry != nil {
+		nuevoTicket := &domain.Ticket{
+			EventID:     ticket.EventID,
+			UserID:      entry.UserID,
+			Estado:      "activo",
+			FechaCompra: time.Now(),
+		}
+		if err := s.ticketDAO.Create(nuevoTicket); err != nil {
+			return err
+		}
+		ahora := time.Now()
+		entry.Estado = "asignado"
+		entry.FechaAsignacion = &ahora
+		return s.waitlistDAO.Update(entry)
+	}
+
+	if event.EntradasVendidas > 0 {
+		event.EntradasVendidas--
+	}
+	return s.eventDAO.Update(event)
 }
 
 func (s *ticketService) TransferTicket(ticketID, userID uint, req domain.TransferTicketRequest) error {

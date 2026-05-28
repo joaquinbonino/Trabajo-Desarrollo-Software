@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getMyTickets, cancelTicket, transferTicket } from '../api/tickets'
+import { getMyWaitlist } from '../api/waitlist'
 
 export default function MyTicketsPage() {
   const [tickets, setTickets] = useState([])
+  const [waitlist, setWaitlist] = useState([])
   const [loading, setLoading] = useState(true)
   const [pageError, setPageError] = useState('')
   const [transferState, setTransferState] = useState({})
@@ -16,8 +18,12 @@ export default function MyTicketsPage() {
     setLoading(true)
     setPageError('')
     try {
-      const res = await getMyTickets()
-      setTickets(res.data.data || [])
+      const [ticketsRes, waitlistRes] = await Promise.all([
+        getMyTickets(),
+        getMyWaitlist(),
+      ])
+      setTickets(ticketsRes.data.data || [])
+      setWaitlist(waitlistRes.data.data || [])
     } catch {
       setPageError('Error al cargar las entradas')
     } finally {
@@ -160,9 +166,52 @@ export default function MyTicketsPage() {
             )
           })}
         </div>
+
+        {waitlist.length > 0 && (
+          <div style={styles.waitlistSection}>
+            <h2 style={{ margin: '0 0 1rem' }}>Lista de espera</h2>
+            <div style={styles.list}>
+              {waitlist.map((w) => (
+                <div key={`wl-${w.id}`} style={styles.card}>
+                  <div style={styles.cardLeft}>
+                    <span style={{ ...styles.badge, ...waitlistBadgeColor(w.estado) }}>
+                      {w.estado === 'asignado' ? 'ASIGNADA' : 'EN ESPERA'}
+                    </span>
+                    <h3 style={styles.eventTitle}>{w.event?.titulo || '—'}</h3>
+                    <p style={styles.eventDate}>
+                      📅 {w.event?.fecha_hora
+                        ? new Date(w.event.fecha_hora).toLocaleString('es-AR', {
+                            day: 'numeric', month: 'long', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit',
+                          })
+                        : '—'}
+                    </p>
+                    {w.estado === 'asignado' ? (
+                      <p style={styles.assignedNote}>
+                        🎉 ¡Se liberó un lugar y te lo asignamos! Ya tenés tu entrada
+                        {w.fecha_asignacion
+                          ? ` (${new Date(w.fecha_asignacion).toLocaleDateString('es-AR')})`
+                          : ''}.
+                      </p>
+                    ) : (
+                      <p style={styles.meta}>
+                        Te avisamos acá si se libera un lugar.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
+}
+
+function waitlistBadgeColor(estado) {
+  if (estado === 'asignado') return { background: '#d1fae5', color: '#065f46' }
+  return { background: '#fef3c7', color: '#92400e' }
 }
 
 function badgeColor(estado) {
@@ -194,4 +243,6 @@ const styles = {
   pageError: { color: '#dc2626', textAlign: 'center' },
   empty: { textAlign: 'center', color: '#6b7280', padding: '2rem' },
   center: { textAlign: 'center', padding: '3rem', color: '#6b7280' },
+  waitlistSection: { marginTop: '2.5rem' },
+  assignedNote: { color: '#065f46', fontSize: '0.85rem', margin: '0.4rem 0 0', background: '#ecfdf5', padding: '0.4rem 0.6rem', borderRadius: '4px' },
 }

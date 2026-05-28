@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { getEvent } from '../api/events'
 import { buyTicket } from '../api/tickets'
+import { joinWaitlist } from '../api/waitlist'
 import { useAuth } from '../context/AuthContext'
 
 export default function EventDetailPage() {
@@ -14,6 +15,8 @@ export default function EventDetailPage() {
   const [buying, setBuying] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
+  const [joiningWaitlist, setJoiningWaitlist] = useState(false)
+  const [waitlistJoined, setWaitlistJoined] = useState(false)
 
   useEffect(() => {
     getEvent(id)
@@ -40,11 +43,29 @@ export default function EventDetailPage() {
     }
   }
 
+  async function handleJoinWaitlist() {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    setJoiningWaitlist(true)
+    setError('')
+    try {
+      await joinWaitlist(Number(id))
+      setWaitlistJoined(true)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Error al anotarse en la lista de espera')
+    } finally {
+      setJoiningWaitlist(false)
+    }
+  }
+
   if (loading) return <p style={styles.center}>Cargando...</p>
   if (!event) return <p style={styles.center}>Evento no encontrado.</p>
 
   const disponibles = event.capacidad_total - event.entradas_vendidas
-  const agotado = disponibles <= 0 || event.cancelado
+  const sinCupo = disponibles <= 0
+  const agotado = sinCupo || event.cancelado
 
   return (
     <div style={styles.page}>
@@ -84,6 +105,33 @@ export default function EventDetailPage() {
                 <Link to="/mis-entradas">Mis Entradas</Link>.
               </p>
             </div>
+          ) : waitlistJoined ? (
+            <div style={styles.successBox}>
+              <h3>📝 ¡Estás en la lista de espera!</h3>
+              <p>Si alguien cancela su entrada, se te asignará automáticamente.
+                Vas a poder verla en <Link to="/mis-entradas">Mis Entradas</Link>.
+              </p>
+            </div>
+          ) : sinCupo && !event.cancelado ? (
+            <>
+              {error && <p style={styles.error}>{error}</p>}
+              <p style={styles.meta}>
+                Este evento está agotado. Anotate en la lista de espera y te avisamos
+                si se libera un lugar.
+              </p>
+              <button
+                style={{ ...styles.waitlistBtn, ...(joiningWaitlist ? styles.buyBtnDisabled : {}) }}
+                onClick={handleJoinWaitlist}
+                disabled={joiningWaitlist}
+              >
+                {joiningWaitlist ? 'Procesando...' : 'Anotarme en lista de espera'}
+              </button>
+              {!user && (
+                <p style={styles.loginNote}>
+                  Necesitás <Link to="/login">iniciar sesión</Link> para anotarte.
+                </p>
+              )}
+            </>
           ) : (
             <>
               {error && <p style={styles.error}>{error}</p>}
@@ -119,6 +167,7 @@ const styles = {
   meta: { color: '#6b7280', fontSize: '0.95rem', margin: '0.25rem 0' },
   description: { margin: '1rem 0', lineHeight: '1.6', color: '#374151' },
   buyBtn: { marginTop: '1.5rem', display: 'block', width: '100%', padding: '0.9rem', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '1.1rem', fontWeight: '600', cursor: 'pointer' },
+  waitlistBtn: { marginTop: '0.75rem', display: 'block', width: '100%', padding: '0.9rem', background: '#0891b2', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '1.1rem', fontWeight: '600', cursor: 'pointer' },
   buyBtnDisabled: { background: '#9ca3af', cursor: 'not-allowed' },
   successBox: { marginTop: '1.5rem', background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: '6px', padding: '1rem' },
   error: { color: '#dc2626', fontSize: '0.9rem', marginTop: '0.5rem' },

@@ -37,3 +37,16 @@ type Ticket struct {
 	Event       Event     `gorm:"foreignKey:EventID;references:ID"`
 	User        User      `gorm:"foreignKey:UserID;references:ID"`
 }
+
+// WaitlistEntry representa la anotación de un usuario en la lista de espera de un
+// evento agotado. Cuando se libera un cupo (cancelación), el primero en estado
+// "pendiente" (orden FIFO por created_at) pasa a "asignado" y se le crea un Ticket.
+type WaitlistEntry struct {
+	gorm.Model
+	EventID         uint       `gorm:"not null"`
+	UserID          uint       `gorm:"not null"`
+	Estado          string     `gorm:"type:enum('pendiente','asignado','cancelado');default:'pendiente'"`
+	FechaAsignacion *time.Time
+	Event           Event `gorm:"foreignKey:EventID;references:ID"`
+	User            User  `gorm:"foreignKey:UserID;references:ID"`
+}

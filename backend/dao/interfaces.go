@@ -22,3 +22,15 @@ type ITicketDAO interface {
 	FindByUserID(userID uint) ([]domain.Ticket, error)
 	Update(ticket *domain.Ticket) error
 }
+
+type IWaitlistDAO interface {
+	Create(entry *domain.WaitlistEntry) error
+	// FindPendingByEventAndUser devuelve la anotación pendiente del usuario en ese
+	// evento, o (nil, nil) si no está anotado.
+	FindPendingByEventAndUser(eventID, userID uint) (*domain.WaitlistEntry, error)
+	// FindFirstPending devuelve el primero de la lista (FIFO) en estado pendiente,
+	// o (nil, nil) si la lista está vacía.
+	FindFirstPending(eventID uint) (*domain.WaitlistEntry, error)
+	FindByUserID(userID uint) ([]domain.WaitlistEntry, error)
+	Update(entry *domain.WaitlistEntry) error
+}

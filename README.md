@@ -68,6 +68,26 @@ npm run dev
 | POST   | /auth/register    | Registrar usuario nuevo            |
 | POST   | /auth/login       | Login, devuelve JWT                |
 
+### Eventos (público)
+| Método | Ruta          | Descripción                          |
+|--------|---------------|--------------------------------------|
+| GET    | /events       | Catálogo (filtro opcional `?categoria=`) |
+| GET    | /events/:id   | Detalle de un evento                 |
+
+### Tickets (protegido)
+| Método | Ruta                     | Descripción                          |
+|--------|--------------------------|--------------------------------------|
+| POST   | /tickets                 | Comprar entrada (valida cupo)        |
+| GET    | /tickets/mine            | Mis entradas (saca el user del JWT)  |
+| DELETE | /tickets/:id             | Cancelar entrada (libera/reasigna cupo) |
+| PUT    | /tickets/:id/transfer    | Transferir entrada a otro usuario    |
+
+### Lista de espera (protegido)
+| Método | Ruta                     | Descripción                          |
+|--------|--------------------------|--------------------------------------|
+| POST   | /events/:id/waitlist     | Anotarse en la lista de espera (solo si el evento está agotado) |
+| GET    | /waitlist/mine           | Mis anotaciones y asignaciones       |
+
 ### Health
 | Método | Ruta      | Descripción                        |
 |--------|-----------|-------------------------------------|
@@ -94,3 +114,17 @@ backend/   → API REST en Go (Gin + GORM)
 frontend/  → SPA en React + Vite
 docs/      → Diagrama de BD y documentación
 ```
+
+## Decisiones de diseño
+
+- **Lista de espera (bonus):** cuando un evento está agotado, un usuario puede anotarse
+  (`WaitlistEntry`, estados `pendiente`/`asignado`/`cancelado`). Al cancelarse una entrada,
+  si hay alguien esperando, el cupo liberado **no vuelve al stock**: se le crea
+  automáticamente un ticket activo al primero de la lista (FIFO por fecha de anotación) y su
+  anotación pasa a `asignado` con `FechaAsignacion`. Esa asignación queda como **registro**
+  visible en `GET /waitlist/mine` y la entrada nueva aparece en "Mis Entradas" (no hay envío
+  de email porque no hay infraestructura de correo). Solo si la lista está vacía se decrementa
+  `EntradasVendidas`.
+- **Atomicidad:** la cancelación con reasignación encadena varias operaciones de DAO sin una
+  transacción explícita, manteniendo el estilo del resto de los servicios. Queda anotado como
+  posible mejora envolver la operación en una transacción GORM.

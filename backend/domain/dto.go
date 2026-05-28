@@ -65,3 +65,11 @@ type TicketResponse struct {
 	FechaCompra time.Time     `json:"fecha_compra"`
 	Event       EventResponse `json:"event"`
 }
+
+// Waitlist
+type WaitlistResponse struct {
+	ID              uint          `json:"id"`
+	Estado          string        `json:"estado"`
+	FechaAsignacion *time.Time    `json:"fecha_asignacion,omitempty"`
+	Event           EventResponse `json:"event"`
+}
