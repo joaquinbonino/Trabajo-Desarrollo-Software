@@ -31,5 +31,5 @@ func (d *ticketDAO) FindByUserID(userID uint) ([]domain.Ticket, error) {
 }
 
 func (d *ticketDAO) Update(ticket *domain.Ticket) error {
-	return d.db.Save(ticket).Error
+	return d.db.Omit("User", "Event").Save(ticket).Error
 }
