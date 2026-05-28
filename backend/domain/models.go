@@ -11,6 +11,7 @@ type User struct {
 	Nombre       string `gorm:"not null"`
 	Email        string `gorm:"uniqueIndex;not null"`
 	PasswordHash string `gorm:"not null"`
+	PasswordSalt string `gorm:"not null"`
 	Rol          string `gorm:"type:enum('cliente','admin');default:'cliente'"`
 }
 
