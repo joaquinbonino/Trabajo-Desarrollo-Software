@@ -5,6 +5,7 @@ import (
 	"backend/controllers"
 	"backend/dao"
 	"backend/services"
+	"backend/utils"
 	"log"
 	"os"
 
@@ -28,20 +29,37 @@ func main() {
 
 	// Services
 	userService := services.NewUserService(userDAO)
-	_ = services.NewEventService(eventDAO)
-	_ = services.NewTicketService(ticketDAO, eventDAO, userDAO)
+	eventService := services.NewEventService(eventDAO)
+	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO)
 
 	// Controllers
 	healthCtrl := controllers.NewHealthController(db)
 	authCtrl := controllers.NewAuthController(userService)
+	eventCtrl := controllers.NewEventController(eventService)
+	ticketCtrl := controllers.NewTicketController(ticketService)
 
 	r := gin.Default()
+	r.Use(utils.CORSMiddleware())
 	r.GET("/health", healthCtrl.Check)
 
 	auth := r.Group("/auth")
 	{
 		auth.POST("/register", authCtrl.Register)
 		auth.POST("/login", authCtrl.Login)
+	}
+
+	// Eventos — públicos
+	r.GET("/events", eventCtrl.List)
+	r.GET("/events/:id", eventCtrl.Get)
+
+	// Rutas protegidas (requieren JWT)
+	protected := r.Group("/")
+	protected.Use(utils.AuthMiddleware())
+	{
+		protected.POST("/tickets", ticketCtrl.Buy)
+		protected.GET("/tickets/mine", ticketCtrl.GetMine)
+		protected.DELETE("/tickets/:id", ticketCtrl.Cancel)
+		protected.PUT("/tickets/:id/transfer", ticketCtrl.Transfer)
 	}
 
 	port := os.Getenv("PORT")
