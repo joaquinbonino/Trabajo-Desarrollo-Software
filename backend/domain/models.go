@@ -8,10 +8,10 @@ import (
 
 type User struct {
 	gorm.Model
-	Nombre       string `gorm:"not null"`
-	Email        string `gorm:"uniqueIndex;not null"`
-	PasswordHash string `gorm:"not null"`
-	PasswordSalt string `gorm:"not null"`
+	Nombre       string `gorm:"type:varchar(100);not null"`
+	Email        string `gorm:"type:varchar(255);uniqueIndex;not null"`
+	PasswordHash string `gorm:"type:varchar(64);not null"`
+	PasswordSalt string `gorm:"type:varchar(32);not null"`
 	Rol          string `gorm:"type:enum('cliente','admin');default:'cliente'"`
 }
 
