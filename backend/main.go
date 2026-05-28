@@ -27,15 +27,22 @@ func main() {
 	ticketDAO := dao.NewTicketDAO(db)
 
 	// Services
-	_ = services.NewUserService(userDAO)
+	userService := services.NewUserService(userDAO)
 	_ = services.NewEventService(eventDAO)
 	_ = services.NewTicketService(ticketDAO, eventDAO, userDAO)
 
 	// Controllers
 	healthCtrl := controllers.NewHealthController(db)
+	authCtrl := controllers.NewAuthController(userService)
 
 	r := gin.Default()
 	r.GET("/health", healthCtrl.Check)
+
+	auth := r.Group("/auth")
+	{
+		auth.POST("/register", authCtrl.Register)
+		auth.POST("/login", authCtrl.Login)
+	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
