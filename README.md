@@ -22,6 +22,8 @@ docker compose up --build
 - Backend:  http://localhost:8080
 - Health:   http://localhost:8080/health
 
+> La primera vez que levanta, GORM crea las tablas automáticamente vía `AutoMigrate`. No hace falta crear nada en SQL.
+
 ## Levantar sin Docker
 
 ### Base de datos
@@ -48,15 +50,34 @@ npm run dev
 
 ## Variables de entorno
 
-| Variable     | Descripción                        |
-|--------------|------------------------------------|
-| DB_HOST      | Host de MySQL (default: localhost) |
-| DB_PORT      | Puerto MySQL (default: 3306)       |
-| DB_USER      | Usuario MySQL                      |
-| DB_PASSWORD  | Contraseña MySQL                   |
-| DB_NAME      | Nombre de la base de datos         |
-| JWT_SECRET   | Secreto para firmar los tokens JWT |
-| PORT         | Puerto del backend (default: 8080) |
+| Variable     | Descripción                        | Ejemplo         |
+|--------------|------------------------------------|-----------------|
+| DB_HOST      | Host de MySQL                      | localhost       |
+| DB_PORT      | Puerto MySQL                       | 3306            |
+| DB_USER      | Usuario MySQL                      | root            |
+| DB_PASSWORD  | Contraseña MySQL                   | secret          |
+| DB_NAME      | Nombre de la base de datos         | eventos_db      |
+| JWT_SECRET   | Secreto para firmar los tokens JWT | clave_secreta   |
+| PORT         | Puerto del backend                 | 8080            |
+
+## Endpoints disponibles
+
+### Auth (público)
+| Método | Ruta              | Descripción                        |
+|--------|-------------------|------------------------------------|
+| POST   | /auth/register    | Registrar usuario nuevo            |
+| POST   | /auth/login       | Login, devuelve JWT                |
+
+### Health
+| Método | Ruta      | Descripción                        |
+|--------|-----------|-------------------------------------|
+| GET    | /health   | Estado del servidor y conexión DB  |
+
+### Usar el token JWT
+Todos los endpoints protegidos requieren el header:
+```
+Authorization: Bearer <token>
+```
 
 ## Comandos útiles (backend)
 
