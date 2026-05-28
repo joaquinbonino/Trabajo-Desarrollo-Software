@@ -21,5 +21,5 @@ func NewDBConnection() (*gorm.DB, error) {
 }
 
 func AutoMigrate(db *gorm.DB) {
-	db.AutoMigrate(&domain.User{}, &domain.Event{}, &domain.Ticket{})
+	db.AutoMigrate(&domain.User{}, &domain.Event{}, &domain.Ticket{}, &domain.WaitlistEntry{})
 }

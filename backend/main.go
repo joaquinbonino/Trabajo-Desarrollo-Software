@@ -26,17 +26,20 @@ func main() {
 	userDAO := dao.NewUserDAO(db)
 	eventDAO := dao.NewEventDAO(db)
 	ticketDAO := dao.NewTicketDAO(db)
+	waitlistDAO := dao.NewWaitlistDAO(db)
 
 	// Services
 	userService := services.NewUserService(userDAO)
 	eventService := services.NewEventService(eventDAO)
-	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO)
+	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, waitlistDAO)
+	waitlistService := services.NewWaitlistService(waitlistDAO, eventDAO)
 
 	// Controllers
 	healthCtrl := controllers.NewHealthController(db)
 	authCtrl := controllers.NewAuthController(userService)
 	eventCtrl := controllers.NewEventController(eventService)
 	ticketCtrl := controllers.NewTicketController(ticketService)
+	waitlistCtrl := controllers.NewWaitlistController(waitlistService)
 
 	r := gin.Default()
 	r.Use(utils.CORSMiddleware())
@@ -60,6 +63,9 @@ func main() {
 		protected.GET("/tickets/mine", ticketCtrl.GetMine)
 		protected.DELETE("/tickets/:id", ticketCtrl.Cancel)
 		protected.PUT("/tickets/:id/transfer", ticketCtrl.Transfer)
+
+		protected.POST("/events/:id/waitlist", waitlistCtrl.Join)
+		protected.GET("/waitlist/mine", waitlistCtrl.GetMine)
 	}
 
 	port := os.Getenv("PORT")

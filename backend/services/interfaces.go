@@ -20,3 +20,8 @@ type ITicketService interface {
 	CancelTicket(ticketID, userID uint) error
 	TransferTicket(ticketID, userID uint, req domain.TransferTicketRequest) error
 }
+
+type IWaitlistService interface {
+	JoinWaitlist(userID, eventID uint) error
+	GetMyWaitlist(userID uint) ([]domain.WaitlistResponse, error)
+}
