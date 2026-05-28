@@ -27,7 +27,7 @@ El backend (Go) expone una API REST. El frontend (React) la consume. Están **de
 
 | Capa        | Tecnología                                                       |
 |-------------|------------------------------------------------------------------|
-| Backend     | Go (>= 1.22), router **Gin** (`github.com/gin-gonic/gin`)        |
+| Backend     | Go (>= 1.26), router **Gin** (`github.com/gin-gonic/gin`)        |
 | ORM         | **GORM** (`gorm.io/gorm` + `gorm.io/driver/mysql`) — obligatorio |
 | Auth        | JWT (`github.com/golang-jwt/jwt/v5`)                             |
 | Base datos  | **MySQL 8**                                                      |
