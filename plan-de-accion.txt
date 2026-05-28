@@ -1,0 +1,75 @@
+/////////////////////////////////////////////////////////
+1- HAGAN FEATURE POR FEATURE cada una en su /feature
+2- vayan pidiendole que revise las capas del md
+3- TESTEEN CADA FEATURE Q HICIERON ANTES DE MERGEAR
+//////////////////////////////////////////////////////////
+
+
+Hoy mismo (sin esperar a nada)
+
+Mandar la propuesta del Bonus Track por mail al docente. El enunciado pone como fecha límite el 22 de mayo —hoy—. Aunque sea preliminar, mandá algo y confirmá si la fecha sigue vigente. Es lo único con deadline "duro" ya encima.
+Crear el repo en GitHub con GitFlow inicializado (main + develop), subir el CLAUDE.md, agregar .gitignore y un .env.example. Invitar a todos los integrantes.
+
+#Fase 0 — Esqueleto (este fin de semana)
+Conviene hacerla en grupo o de a pares, porque es la base que después todos tocan. El objetivo es "que arranque vacío pero entero".
+
+Backend: estructura de carpetas (clients/ controllers/ dao/ domain/ services/ utils/ main.go), go mod init, Gin levantando un /health.
+Frontend: npm create vite, React Router, un App con rutas vacías, cliente Axios en src/api/.
+docker-compose.yml que al menos levante MySQL (así todos desarrollan contra la misma DB).
+Conexión backend↔MySQL viva desde clients/ (que el /health confirme que conecta).
+
+Hito: docker compose up levanta la DB y el backend conecta. Ya cumplís el primer punto de regularidad ("estructura base y conexión exitosa a la base de datos").
+--------------------------------------------------------------------------------------------
+#Fase 1 — Datos + Autenticación (semana 1: ~26 may – 1 jun)
+Esto bloquea casi todo lo demás, así que va primero y rápido.
+
+Modelo de datos: cerrar atributos de User, Event, Ticket y relaciones (FKs). AutoMigrate con GORM crea las tablas. Acá conviene que antes definamos el modelo en detalle (te lo ofrezco abajo).
+Hash de contraseñas en utils (SHA-256 + salt).
+Registro y login: endpoints + generación de JWT con claims user_id, rol, exp.
+Middleware de auth básico (valida token; el chequeo estricto de rol queda para el final).
+
+Hito: podés registrarte, loguearte y recibir un token. Cubre el punto "registro y login con hasheo" + "JWT básico" de regularidad.
+------------------------------------------------------------------------------------------------
+#Fase 2 — Flujo Cliente completo (semana 2: ~2 – 8 jun)
+El núcleo de la regularidad. Acá conviene dividir por features verticales (cada persona se lleva un slice completo controller→service→dao→vista). Eso reparte el trabajo y, de paso, hace que cada uno toque todas las capas —importante porque el final es individual y vas a tener que defender todo el sistema vos solo.
+Backend (con sus validaciones de negocio):
+
+Catálogo de eventos + al menos un filtro (público).
+Detalle de evento (público).
+Comprar entrada (valida cupo disponible; protegido).
+Mis Entradas (saca el user_id del token, nunca de un parámetro; protegido).
+Cancelar compra (libera el cupo; protegido).
+Transferir entrada (cambia titular en una transacción atómica; protegido).
+
+Frontend en paralelo: Home/catálogo con búsqueda, detalle, flujo de compra con pantalla "Congrats"/manejo de error, y vista "Mis Entradas" con botones de cancelar y transferir.
+Tests desde el día uno, no al final: cada feature se mergea con sus tests de service y de controller (httptest), cubriendo caso de éxito y de error.
+------------------------------------------------------------------------------------------------------
+#Fase 3 — Cierre de regularidad (semana 3: ~9 – 12 jun)
+
+Integración FE↔BE de punta a punta y arreglo de bugs.
+Llegar al 40% de cobertura en services + controllers (correr go test ./... -cover y completar lo que falte).
+README con pasos para levantar el proyecto + diagrama de BD en /docs.
+Ensayar la defensa oral (es grupal y la fecha sale al azar entre las dos).
+
+Hito: entrega de regularidad. Todo lo de Admin, Docker y Bonus queda explícitamente afuera de este hito.
+---------------------------------------------------------------------------------------------------------
+#Fase 4 — De cara al final (después de regularizar, modo individual)
+Suma sobre lo anterior:
+
+Autorización real: middleware que valide rol, separando acciones Cliente vs. Admin.
+Admin completo: crear/editar/cancelar evento + reporte de ocupación/ventas (backend y vistas).
+Bonus Track implementado.
+Dockerización completa: compose con frontend + backend + MySQL.
+Cobertura al 80%.
+Documentación definitiva (decisiones de diseño, capturas, diagrama incrustado).
+
+
+Cómo repartir el trabajo (grupo de 3-4)
+Las fases 0 y 1 son fundaciones compartidas (háganlas juntos). A partir de la Fase 2, dividan por features:
+
+Persona A: auth + infra (clients, utils, middleware) → después, panel/reportes Admin.
+Persona B: features de Eventos (catálogo, detalle, ABM) backend + sus vistas.
+Persona C: features de Tickets (compra, cancelación, transferencia) + sus vistas.
+Persona D (si son 4): frontend transversal (layout, auth context, routing) + tests E2E del bonus.
+
+Que todos commiteen seguido: el enunciado dice que el aporte de cada integrante debe ser "comprobable", y lo van a mirar en el historial de Git.
