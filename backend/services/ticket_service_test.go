@@ -32,6 +32,10 @@ func (m *mockTicketDAO) FindByUserID(userID uint) ([]domain.Ticket, error) {
 	}
 	return args.Get(0).([]domain.Ticket), args.Error(1)
 }
+func (m *mockTicketDAO) FindByEventID(eventID uint) ([]domain.Ticket, error) {
+	args := m.Called(eventID)
+	return args.Get(0).([]domain.Ticket), args.Error(1)
+}
 func (m *mockTicketDAO) Update(ticket *domain.Ticket) error {
 	args := m.Called(ticket)
 	return args.Error(0)

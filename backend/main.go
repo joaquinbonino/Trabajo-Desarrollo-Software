@@ -30,7 +30,7 @@ func main() {
 
 	// Services
 	userService := services.NewUserService(userDAO)
-	eventService := services.NewEventService(eventDAO)
+	eventService := services.NewEventService(eventDAO, ticketDAO)
 	ticketService := services.NewTicketService(ticketDAO, eventDAO, userDAO, waitlistDAO)
 	waitlistService := services.NewWaitlistService(waitlistDAO, eventDAO)
 
@@ -66,6 +66,16 @@ func main() {
 
 		protected.POST("/events/:id/waitlist", waitlistCtrl.Join)
 		protected.GET("/waitlist/mine", waitlistCtrl.GetMine)
+	}
+
+	// Rutas de administrador (requieren JWT + rol admin)
+	admin := r.Group("/")
+	admin.Use(utils.AuthMiddleware(), utils.AdminMiddleware())
+	{
+		admin.POST("/events", eventCtrl.Create)
+		admin.PUT("/events/:id", eventCtrl.Update)
+		admin.PATCH("/events/:id/cancel", eventCtrl.Cancel)
+		admin.GET("/events/:id/report", eventCtrl.Report)
 	}
 
 	port := os.Getenv("PORT")

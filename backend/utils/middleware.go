@@ -21,6 +21,17 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
+func AdminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetString("rol") != "admin" {
+			Error(c, http.StatusForbidden, "se requiere rol de administrador")
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
