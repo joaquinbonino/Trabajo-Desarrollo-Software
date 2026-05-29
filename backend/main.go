@@ -68,6 +68,14 @@ func main() {
 		protected.GET("/waitlist/mine", waitlistCtrl.GetMine)
 	}
 
+	// Rutas de administrador (requieren JWT + rol admin)
+	admin := r.Group("/")
+	admin.Use(utils.AuthMiddleware(), utils.AdminMiddleware())
+	{
+		admin.POST("/events", eventCtrl.Create)
+		admin.PATCH("/events/:id/cancel", eventCtrl.Cancel)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
