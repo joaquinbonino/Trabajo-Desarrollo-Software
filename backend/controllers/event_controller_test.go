@@ -49,6 +49,13 @@ func (m *mockEventService) CancelEvent(id uint) error {
 	args := m.Called(id)
 	return args.Error(0)
 }
+func (m *mockEventService) GetEventReport(id uint) (*domain.EventReportResponse, error) {
+	args := m.Called(id)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.EventReportResponse), args.Error(1)
+}
 
 func setupEventRouter(ctrl *controllers.EventController) *gin.Engine {
 	gin.SetMode(gin.TestMode)

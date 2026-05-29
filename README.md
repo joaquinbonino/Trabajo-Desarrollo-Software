@@ -96,6 +96,16 @@ Al cancelar una entrada, el sistema resta 1 a `EntradasVendidas` en el evento (l
 | POST   | /events/:id/waitlist     | Anotarse en la lista de espera (solo si el evento está agotado) |
 | GET    | /waitlist/mine           | Mis anotaciones y asignaciones       |
 
+### Administrador (protegido, requiere rol admin)
+| Método | Ruta                     | Descripción                          |
+|--------|--------------------------|--------------------------------------|
+| POST   | /events                  | Crear nuevo evento                   |
+| PUT    | /events/:id              | Actualizar datos de un evento        |
+| PATCH  | /events/:id/cancel       | Cancelar un evento                   |
+| GET    | /events/:id/report       | Reporte de ocupación y compradores   |
+
+> Estos endpoints están implementados en el backend pero **no tienen vista en el frontend**. Para usarlos se requiere una herramienta como Postman con el token de un usuario admin en el header `Authorization: Bearer <token>`. Las vistas de administrador corresponden al hito 2 (entrega final).
+
 ### Health
 | Método | Ruta      | Descripción                        |
 |--------|-----------|-------------------------------------|

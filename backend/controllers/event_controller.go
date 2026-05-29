@@ -75,6 +75,20 @@ func (h *EventController) Update(c *gin.Context) {
 	utils.Success(c, http.StatusOK, event)
 }
 
+func (h *EventController) Report(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, "id inválido")
+		return
+	}
+	report, err := h.service.GetEventReport(uint(id))
+	if err != nil {
+		utils.Error(c, http.StatusNotFound, err.Error())
+		return
+	}
+	utils.Success(c, http.StatusOK, report)
+}
+
 func (h *EventController) Cancel(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {

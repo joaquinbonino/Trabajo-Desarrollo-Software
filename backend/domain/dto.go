@@ -76,6 +76,23 @@ type TicketResponse struct {
 	Event       EventResponse `json:"event"`
 }
 
+type BuyerInfo struct {
+	UserID      uint      `json:"user_id"`
+	Nombre      string    `json:"nombre"`
+	Email       string    `json:"email"`
+	Estado      string    `json:"estado"`
+	FechaCompra time.Time `json:"fecha_compra"`
+}
+
+type EventReportResponse struct {
+	EventID          uint       `json:"event_id"`
+	Titulo           string     `json:"titulo"`
+	CapacidadTotal   int        `json:"capacidad_total"`
+	EntradasVendidas int        `json:"entradas_vendidas"`
+	EntradasDisponibles int     `json:"entradas_disponibles"`
+	Compradores      []BuyerInfo `json:"compradores"`
+}
+
 // Waitlist
 type WaitlistResponse struct {
 	ID              uint          `json:"id"`

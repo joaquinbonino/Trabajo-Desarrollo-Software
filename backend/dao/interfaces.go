@@ -20,6 +20,7 @@ type ITicketDAO interface {
 	Create(ticket *domain.Ticket) error
 	FindByID(id uint) (*domain.Ticket, error)
 	FindByUserID(userID uint) ([]domain.Ticket, error)
+	FindByEventID(eventID uint) ([]domain.Ticket, error)
 	Update(ticket *domain.Ticket) error
 }
 

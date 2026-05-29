@@ -13,6 +13,7 @@ type IEventService interface {
 	CreateEvent(req domain.CreateEventRequest) (*domain.EventResponse, error)
 	UpdateEvent(id uint, req domain.UpdateEventRequest) (*domain.EventResponse, error)
 	CancelEvent(id uint) error
+	GetEventReport(id uint) (*domain.EventReportResponse, error)
 }
 
 type ITicketService interface {

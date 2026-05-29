@@ -7,11 +7,12 @@ import (
 )
 
 type eventService struct {
-	dao dao.IEventDAO
+	dao       dao.IEventDAO
+	ticketDAO dao.ITicketDAO
 }
 
-func NewEventService(d dao.IEventDAO) IEventService {
-	return &eventService{dao: d}
+func NewEventService(d dao.IEventDAO, td dao.ITicketDAO) IEventService {
+	return &eventService{dao: d, ticketDAO: td}
 }
 
 func (s *eventService) ListEvents(categoria string) ([]domain.EventResponse, error) {
@@ -101,6 +102,35 @@ func (s *eventService) CancelEvent(id uint) error {
 	}
 	event.Cancelado = true
 	return s.dao.Update(event)
+}
+
+func (s *eventService) GetEventReport(id uint) (*domain.EventReportResponse, error) {
+	event, err := s.dao.FindByID(id)
+	if err != nil {
+		return nil, errors.New("evento no encontrado")
+	}
+	tickets, err := s.ticketDAO.FindByEventID(id)
+	if err != nil {
+		return nil, err
+	}
+	buyers := make([]domain.BuyerInfo, 0, len(tickets))
+	for _, t := range tickets {
+		buyers = append(buyers, domain.BuyerInfo{
+			UserID:      t.UserID,
+			Nombre:      t.User.Nombre,
+			Email:       t.User.Email,
+			Estado:      t.Estado,
+			FechaCompra: t.FechaCompra,
+		})
+	}
+	return &domain.EventReportResponse{
+		EventID:             event.ID,
+		Titulo:              event.Titulo,
+		CapacidadTotal:      event.CapacidadTotal,
+		EntradasVendidas:    event.EntradasVendidas,
+		EntradasDisponibles: event.CapacidadTotal - event.EntradasVendidas,
+		Compradores:         buyers,
+	}, nil
 }
 
 func toEventResponse(e domain.Event) domain.EventResponse {
