@@ -37,6 +37,16 @@ type CreateEventRequest struct {
 	Foto           string    `json:"foto"`
 }
 
+type UpdateEventRequest struct {
+	Titulo         string    `json:"titulo"`
+	Descripcion    string    `json:"descripcion"`
+	Categoria      string    `json:"categoria"`
+	FechaHora      time.Time `json:"fecha_hora"`
+	Duracion       int       `json:"duracion"`
+	CapacidadTotal int       `json:"capacidad_total" binding:"omitempty,min=1"`
+	Foto           string    `json:"foto"`
+}
+
 type EventResponse struct {
 	ID               uint      `json:"id"`
 	Titulo           string    `json:"titulo"`

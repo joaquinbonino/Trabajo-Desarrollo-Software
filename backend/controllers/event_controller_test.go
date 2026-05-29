@@ -38,6 +38,13 @@ func (m *mockEventService) CreateEvent(req domain.CreateEventRequest) (*domain.E
 	}
 	return args.Get(0).(*domain.EventResponse), args.Error(1)
 }
+func (m *mockEventService) UpdateEvent(id uint, req domain.UpdateEventRequest) (*domain.EventResponse, error) {
+	args := m.Called(id, req)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*domain.EventResponse), args.Error(1)
+}
 func (m *mockEventService) CancelEvent(id uint) error {
 	args := m.Called(id)
 	return args.Error(0)

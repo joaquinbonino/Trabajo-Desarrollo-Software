@@ -56,6 +56,25 @@ func (h *EventController) Create(c *gin.Context) {
 	utils.Success(c, http.StatusCreated, event)
 }
 
+func (h *EventController) Update(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, "id inválido")
+		return
+	}
+	var req domain.UpdateEventRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	event, err := h.service.UpdateEvent(uint(id), req)
+	if err != nil {
+		utils.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	utils.Success(c, http.StatusOK, event)
+}
+
 func (h *EventController) Cancel(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {

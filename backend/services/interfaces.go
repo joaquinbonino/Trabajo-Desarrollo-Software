@@ -11,6 +11,7 @@ type IEventService interface {
 	ListEvents(categoria string) ([]domain.EventResponse, error)
 	GetEvent(id uint) (*domain.EventResponse, error)
 	CreateEvent(req domain.CreateEventRequest) (*domain.EventResponse, error)
+	UpdateEvent(id uint, req domain.UpdateEventRequest) (*domain.EventResponse, error)
 	CancelEvent(id uint) error
 }
 
