@@ -53,6 +53,13 @@ func (m *mockEventDAO) FindAll(categoria string) ([]domain.Event, error) {
 	args := m.Called(categoria)
 	return args.Get(0).([]domain.Event), args.Error(1)
 }
+func (m *mockEventDAO) FindAllAdmin() ([]domain.Event, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]domain.Event), args.Error(1)
+}
 func (m *mockEventDAO) Update(event *domain.Event) error {
 	args := m.Called(event)
 	return args.Error(0)

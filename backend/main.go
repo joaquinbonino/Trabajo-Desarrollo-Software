@@ -72,6 +72,7 @@ func main() {
 	admin := r.Group("/")
 	admin.Use(utils.AuthMiddleware(), utils.AdminMiddleware())
 	{
+		admin.GET("/admin/events", eventCtrl.ListAll)
 		admin.POST("/events", eventCtrl.Create)
 		admin.PUT("/events/:id", eventCtrl.Update)
 		admin.PATCH("/events/:id/cancel", eventCtrl.Cancel)
