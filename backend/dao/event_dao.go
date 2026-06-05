@@ -34,6 +34,12 @@ func (d *eventDAO) FindAll(categoria string) ([]domain.Event, error) {
 	return events, err
 }
 
+func (d *eventDAO) FindAllAdmin() ([]domain.Event, error) {
+	var events []domain.Event
+	err := d.db.Find(&events).Error
+	return events, err
+}
+
 func (d *eventDAO) Update(event *domain.Event) error {
 	return d.db.Save(event).Error
 }

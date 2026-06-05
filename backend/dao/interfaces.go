@@ -13,6 +13,7 @@ type IEventDAO interface {
 	Create(event *domain.Event) error
 	FindByID(id uint) (*domain.Event, error)
 	FindAll(categoria string) ([]domain.Event, error)
+	FindAllAdmin() ([]domain.Event, error)
 	Update(event *domain.Event) error
 }
 

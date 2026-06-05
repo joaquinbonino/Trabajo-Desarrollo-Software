@@ -5,10 +5,18 @@ import EventDetailPage from './pages/EventDetailPage'
 import MyTicketsPage from './pages/MyTicketsPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
+import AdminEventsPage from './pages/AdminEventsPage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
   return token ? children : <Navigate to="/login" replace />
+}
+
+function AdminRoute({ children }) {
+  const { token, user } = useAuth()
+  if (!token) return <Navigate to="/login" replace />
+  if (user?.rol !== 'admin') return <Navigate to="/" replace />
+  return children
 }
 
 export default function App() {
@@ -23,6 +31,10 @@ export default function App() {
           <Route
             path="/mis-entradas"
             element={<PrivateRoute><MyTicketsPage /></PrivateRoute>}
+          />
+          <Route
+            path="/admin"
+            element={<AdminRoute><AdminEventsPage /></AdminRoute>}
           />
         </Routes>
       </BrowserRouter>

@@ -17,6 +17,14 @@ import (
 
 type mockEventService struct{ mock.Mock }
 
+func (m *mockEventService) ListAllEvents() ([]domain.EventResponse, error) {
+	args := m.Called()
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).([]domain.EventResponse), args.Error(1)
+}
+
 func (m *mockEventService) ListEvents(categoria string) ([]domain.EventResponse, error) {
 	args := m.Called(categoria)
 	if args.Get(0) == nil {

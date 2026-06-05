@@ -42,6 +42,15 @@ func (h *EventController) Get(c *gin.Context) {
 	utils.Success(c, http.StatusOK, event)
 }
 
+func (h *EventController) ListAll(c *gin.Context) {
+	events, err := h.service.ListAllEvents()
+	if err != nil {
+		utils.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	utils.Success(c, http.StatusOK, events)
+}
+
 func (h *EventController) Create(c *gin.Context) {
 	var req domain.CreateEventRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

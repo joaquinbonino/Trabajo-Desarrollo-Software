@@ -42,6 +42,9 @@ export default function HomePage() {
         <nav style={styles.nav}>
           {user ? (
             <>
+              {user.rol === 'admin' && (
+                <Link to="/admin" style={styles.navLink}>Panel Admin</Link>
+              )}
               <Link to="/mis-entradas" style={styles.navLink}>Mis Entradas</Link>
               <span style={styles.navUser}>Hola, {user.nombre}</span>
               <button onClick={handleLogout} style={styles.navBtn}>Cerrar sesión</button>

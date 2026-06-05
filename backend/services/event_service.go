@@ -27,6 +27,18 @@ func (s *eventService) ListEvents(categoria string) ([]domain.EventResponse, err
 	return result, nil
 }
 
+func (s *eventService) ListAllEvents() ([]domain.EventResponse, error) {
+	events, err := s.dao.FindAllAdmin()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]domain.EventResponse, len(events))
+	for i, e := range events {
+		result[i] = toEventResponse(e)
+	}
+	return result, nil
+}
+
 func (s *eventService) GetEvent(id uint) (*domain.EventResponse, error) {
 	event, err := s.dao.FindByID(id)
 	if err != nil {
