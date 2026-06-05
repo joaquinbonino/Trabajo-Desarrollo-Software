@@ -134,6 +134,20 @@ La app solo permite registrar usuarios con rol `cliente`. Para crear un admin:
 
 ## Decisiones de diseño
 
+### Seguridad de contraseñas: SHA-256 + Salt
+
+Las contraseñas nunca se almacenan en texto plano. Al registrarse, el sistema:
+
+1. Genera un **salt** aleatorio de 16 bytes único por usuario.
+2. Concatena la contraseña con el salt y aplica **SHA-256**.
+3. Guarda en la base de datos solo el hash resultante y el salt — nunca la contraseña original.
+
+Al hacer login, repite el proceso con la contraseña ingresada y compara el hash con el almacenado.
+
+El salt garantiza que dos usuarios con la misma contraseña tengan hashes distintos en la base de datos, protegiéndose contra ataques de rainbow table.
+
+La contraseña nunca aparece en las respuestas de la API — el DTO `UserResponse` solo expone `id`, `nombre`, `email` y `rol`.
+
 ### Borrado de registros: Soft Delete
 
 Las tres entidades principales (`User`, `Event`, `Ticket`) usan **soft delete** en lugar de borrado físico.
