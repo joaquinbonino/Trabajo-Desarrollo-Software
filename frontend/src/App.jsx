@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import AdminEventsPage from './pages/AdminEventsPage'
 import EventFormPage from './pages/EventFormPage'
+import AdminReportPage from './pages/AdminReportPage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -44,6 +45,10 @@ export default function App() {
           <Route
             path="/admin/editar/:id"
             element={<AdminRoute><EventFormPage /></AdminRoute>}
+          />
+          <Route
+            path="/admin/reportes/:id"
+            element={<AdminRoute><AdminReportPage /></AdminRoute>}
           />
         </Routes>
       </BrowserRouter>
