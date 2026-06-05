@@ -6,6 +6,7 @@ import MyTicketsPage from './pages/MyTicketsPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import AdminEventsPage from './pages/AdminEventsPage'
+import EventFormPage from './pages/EventFormPage'
 
 function PrivateRoute({ children }) {
   const { token } = useAuth()
@@ -35,6 +36,14 @@ export default function App() {
           <Route
             path="/admin"
             element={<AdminRoute><AdminEventsPage /></AdminRoute>}
+          />
+          <Route
+            path="/admin/nuevo"
+            element={<AdminRoute><EventFormPage /></AdminRoute>}
+          />
+          <Route
+            path="/admin/editar/:id"
+            element={<AdminRoute><EventFormPage /></AdminRoute>}
           />
         </Routes>
       </BrowserRouter>

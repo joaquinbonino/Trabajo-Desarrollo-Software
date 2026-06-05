@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getAllEventsAdmin, cancelEvent, updateEvent } from '../api/events'
+import { getAllEventsAdmin, cancelEvent } from '../api/events'
 import { useAuth } from '../context/AuthContext'
 
 export default function AdminEventsPage() {
@@ -8,8 +8,6 @@ export default function AdminEventsPage() {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [editingId, setEditingId] = useState(null)
-  const [editForm, setEditForm] = useState({})
   const [actionError, setActionError] = useState({})
 
   useEffect(() => {
@@ -26,44 +24,6 @@ export default function AdminEventsPage() {
       setError('Error al cargar los eventos')
     } finally {
       setLoading(false)
-    }
-  }
-
-  function startEdit(event) {
-    setEditingId(event.id)
-    setEditForm({
-      titulo: event.titulo,
-      descripcion: event.descripcion || '',
-      categoria: event.categoria || '',
-      fecha_hora: event.fecha_hora ? event.fecha_hora.slice(0, 16) : '',
-      duracion: event.duracion || 0,
-      capacidad_total: event.capacidad_total,
-      foto: event.foto || '',
-    })
-    setActionError((prev) => ({ ...prev, [event.id]: '' }))
-  }
-
-  function cancelEdit() {
-    setEditingId(null)
-    setEditForm({})
-  }
-
-  async function handleSaveEdit(id) {
-    try {
-      const payload = {
-        ...editForm,
-        duracion: Number(editForm.duracion),
-        capacidad_total: Number(editForm.capacidad_total),
-        fecha_hora: editForm.fecha_hora ? new Date(editForm.fecha_hora).toISOString() : undefined,
-      }
-      const res = await updateEvent(id, payload)
-      setEvents((prev) => prev.map((e) => (e.id === id ? res.data.data : e)))
-      setEditingId(null)
-    } catch (err) {
-      setActionError((prev) => ({
-        ...prev,
-        [id]: err.response?.data?.error || 'Error al guardar',
-      }))
     }
   }
 
@@ -116,107 +76,43 @@ export default function AdminEventsPage() {
               </thead>
               <tbody>
                 {events.map((event) => (
-                  <>
-                    <tr key={event.id} style={styles.tr}>
-                      <td style={styles.td}>{event.id}</td>
-                      <td style={styles.td}>{event.titulo}</td>
-                      <td style={styles.td}>{event.categoria || '—'}</td>
-                      <td style={styles.td}>
-                        {new Date(event.fecha_hora).toLocaleDateString('es-AR', {
-                          day: 'numeric', month: 'short', year: 'numeric',
-                        })}
-                      </td>
-                      <td style={{ ...styles.td, textAlign: 'center' }}>{event.capacidad_total}</td>
-                      <td style={{ ...styles.td, textAlign: 'center' }}>{event.entradas_vendidas}</td>
-                      <td style={styles.td}>
-                        <span style={{ ...styles.badge, ...(event.cancelado ? styles.badgeCancelado : styles.badgeActivo) }}>
-                          {event.cancelado ? 'CANCELADO' : 'ACTIVO'}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.actions}>
-                          {!event.cancelado && (
-                            <>
-                              <button
-                                style={styles.editBtn}
-                                onClick={() => editingId === event.id ? cancelEdit() : startEdit(event)}
-                              >
-                                {editingId === event.id ? 'Cerrar' : 'Editar'}
-                              </button>
-                              <button
-                                style={styles.cancelBtn}
-                                onClick={() => handleCancel(event.id)}
-                              >
-                                Cancelar
-                              </button>
-                            </>
-                          )}
-                          <Link to={`/admin/reportes/${event.id}`} style={styles.reportBtn}>
-                            Reporte
-                          </Link>
-                        </div>
-                        {actionError[event.id] && (
-                          <p style={styles.inlineError}>{actionError[event.id]}</p>
+                  <tr key={event.id} style={styles.tr}>
+                    <td style={styles.td}>{event.id}</td>
+                    <td style={styles.td}>{event.titulo}</td>
+                    <td style={styles.td}>{event.categoria || '—'}</td>
+                    <td style={styles.td}>
+                      {new Date(event.fecha_hora).toLocaleDateString('es-AR', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                      })}
+                    </td>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>{event.capacidad_total}</td>
+                    <td style={{ ...styles.td, textAlign: 'center' }}>{event.entradas_vendidas}</td>
+                    <td style={styles.td}>
+                      <span style={{ ...styles.badge, ...(event.cancelado ? styles.badgeCancelado : styles.badgeActivo) }}>
+                        {event.cancelado ? 'CANCELADO' : 'ACTIVO'}
+                      </span>
+                    </td>
+                    <td style={styles.td}>
+                      <div style={styles.actions}>
+                        {!event.cancelado && (
+                          <>
+                            <Link to={`/admin/editar/${event.id}`} style={styles.editBtn}>
+                              Editar
+                            </Link>
+                            <button style={styles.cancelBtn} onClick={() => handleCancel(event.id)}>
+                              Cancelar
+                            </button>
+                          </>
                         )}
-                      </td>
-                    </tr>
-
-                    {editingId === event.id && (
-                      <tr key={`edit-${event.id}`}>
-                        <td colSpan={8} style={styles.editRow}>
-                          <div style={styles.editForm}>
-                            <h4 style={{ margin: '0 0 1rem' }}>Editar evento #{event.id}</h4>
-                            <div style={styles.formGrid}>
-                              <label style={styles.label}>
-                                Título
-                                <input style={styles.input} value={editForm.titulo}
-                                  onChange={(e) => setEditForm({ ...editForm, titulo: e.target.value })} />
-                              </label>
-                              <label style={styles.label}>
-                                Categoría
-                                <input style={styles.input} value={editForm.categoria}
-                                  onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })} />
-                              </label>
-                              <label style={styles.label}>
-                                Fecha y hora
-                                <input type="datetime-local" style={styles.input} value={editForm.fecha_hora}
-                                  onChange={(e) => setEditForm({ ...editForm, fecha_hora: e.target.value })} />
-                              </label>
-                              <label style={styles.label}>
-                                Duración (min)
-                                <input type="number" style={styles.input} value={editForm.duracion}
-                                  onChange={(e) => setEditForm({ ...editForm, duracion: e.target.value })} />
-                              </label>
-                              <label style={styles.label}>
-                                Capacidad total
-                                <input type="number" style={styles.input} value={editForm.capacidad_total}
-                                  onChange={(e) => setEditForm({ ...editForm, capacidad_total: e.target.value })} />
-                              </label>
-                              <label style={styles.label}>
-                                URL Foto
-                                <input style={styles.input} value={editForm.foto}
-                                  onChange={(e) => setEditForm({ ...editForm, foto: e.target.value })} />
-                              </label>
-                              <label style={{ ...styles.label, gridColumn: '1 / -1' }}>
-                                Descripción
-                                <textarea style={{ ...styles.input, height: '80px', resize: 'vertical' }}
-                                  value={editForm.descripcion}
-                                  onChange={(e) => setEditForm({ ...editForm, descripcion: e.target.value })} />
-                              </label>
-                            </div>
-                            <div style={styles.editActions}>
-                              <button style={styles.saveBtn} onClick={() => handleSaveEdit(event.id)}>
-                                Guardar cambios
-                              </button>
-                              <button style={styles.discardBtn} onClick={cancelEdit}>
-                                Descartar
-                              </button>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
+                        <Link to={`/admin/reportes/${event.id}`} style={styles.reportBtn}>
+                          Reporte
+                        </Link>
+                      </div>
+                      {actionError[event.id] && (
+                        <p style={styles.inlineError}>{actionError[event.id]}</p>
+                      )}
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -246,18 +142,10 @@ const styles = {
   badgeActivo: { background: '#d1fae5', color: '#065f46' },
   badgeCancelado: { background: '#fee2e2', color: '#991b1b' },
   actions: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap' },
-  editBtn: { padding: '0.3rem 0.7rem', background: '#e0e7ff', color: '#3730a3', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' },
+  editBtn: { padding: '0.3rem 0.7rem', background: '#e0e7ff', color: '#3730a3', borderRadius: '4px', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' },
   cancelBtn: { padding: '0.3rem 0.7rem', background: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' },
   reportBtn: { padding: '0.3rem 0.7rem', background: '#fef3c7', color: '#92400e', borderRadius: '4px', textDecoration: 'none', fontSize: '0.8rem', fontWeight: '600' },
   inlineError: { color: '#dc2626', fontSize: '0.78rem', margin: '0.3rem 0 0' },
-  editRow: { background: '#f8f7ff', padding: 0 },
-  editForm: { padding: '1.5rem' },
-  formGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1rem' },
-  label: { display: 'flex', flexDirection: 'column', gap: '0.3rem', fontSize: '0.85rem', fontWeight: '600', color: '#374151' },
-  input: { padding: '0.5rem', border: '1px solid #d1d5db', borderRadius: '4px', fontSize: '0.9rem', fontFamily: 'sans-serif' },
-  editActions: { display: 'flex', gap: '0.75rem' },
-  saveBtn: { padding: '0.5rem 1.2rem', background: '#4f46e5', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' },
-  discardBtn: { padding: '0.5rem 1.2rem', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' },
   error: { color: '#dc2626', textAlign: 'center' },
   empty: { textAlign: 'center', color: '#6b7280', padding: '2rem' },
   center: { textAlign: 'center', padding: '3rem', color: '#6b7280' },
