@@ -37,6 +37,16 @@ type CreateEventRequest struct {
 	Foto           string    `json:"foto"`
 }
 
+type UpdateEventRequest struct {
+	Titulo         string    `json:"titulo"`
+	Descripcion    string    `json:"descripcion"`
+	Categoria      string    `json:"categoria"`
+	FechaHora      time.Time `json:"fecha_hora"`
+	Duracion       int       `json:"duracion"`
+	CapacidadTotal int       `json:"capacidad_total" binding:"omitempty,min=1"`
+	Foto           string    `json:"foto"`
+}
+
 type EventResponse struct {
 	ID               uint      `json:"id"`
 	Titulo           string    `json:"titulo"`
@@ -64,4 +74,29 @@ type TicketResponse struct {
 	Estado      string        `json:"estado"`
 	FechaCompra time.Time     `json:"fecha_compra"`
 	Event       EventResponse `json:"event"`
+}
+
+type BuyerInfo struct {
+	UserID      uint      `json:"user_id"`
+	Nombre      string    `json:"nombre"`
+	Email       string    `json:"email"`
+	Estado      string    `json:"estado"`
+	FechaCompra time.Time `json:"fecha_compra"`
+}
+
+type EventReportResponse struct {
+	EventID          uint       `json:"event_id"`
+	Titulo           string     `json:"titulo"`
+	CapacidadTotal   int        `json:"capacidad_total"`
+	EntradasVendidas int        `json:"entradas_vendidas"`
+	EntradasDisponibles int     `json:"entradas_disponibles"`
+	Compradores      []BuyerInfo `json:"compradores"`
+}
+
+// Waitlist
+type WaitlistResponse struct {
+	ID              uint          `json:"id"`
+	Estado          string        `json:"estado"`
+	FechaAsignacion *time.Time    `json:"fecha_asignacion,omitempty"`
+	Event           EventResponse `json:"event"`
 }

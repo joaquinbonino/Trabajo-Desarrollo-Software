@@ -30,6 +30,12 @@ func (d *ticketDAO) FindByUserID(userID uint) ([]domain.Ticket, error) {
 	return tickets, err
 }
 
+func (d *ticketDAO) FindByEventID(eventID uint) ([]domain.Ticket, error) {
+	var tickets []domain.Ticket
+	err := d.db.Preload("User").Where("event_id = ?", eventID).Find(&tickets).Error
+	return tickets, err
+}
+
 func (d *ticketDAO) Update(ticket *domain.Ticket) error {
-	return d.db.Save(ticket).Error
+	return d.db.Omit("User", "Event").Save(ticket).Error
 }

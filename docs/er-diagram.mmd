@@ -1,0 +1,58 @@
+%% Diagrama Entidad-Relación del Sistema de Gestión de Eventos y Entradas
+%% Fuente del diagrama incrustado en el README. Render: https://mermaid.live
+%% o cualquier visor compatible con Mermaid (GitHub lo renderiza nativamente).
+erDiagram
+    USERS ||--o{ TICKETS : "es titular de"
+    USERS ||--o{ WAITLIST_ENTRIES : "se anota en"
+    EVENTS ||--o{ TICKETS : "tiene"
+    EVENTS ||--o{ WAITLIST_ENTRIES : "tiene cola en"
+
+    USERS {
+        uint id PK
+        string nombre
+        string email UK "uniqueIndex, not null"
+        string password_hash "SHA-256, not null"
+        string password_salt "not null"
+        enum rol "cliente | admin"
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at "soft delete"
+    }
+
+    EVENTS {
+        uint id PK
+        string titulo "not null"
+        string descripcion
+        string categoria
+        datetime fecha_hora "not null"
+        int duracion "minutos"
+        int capacidad_total "not null"
+        int entradas_vendidas "default 0"
+        string foto "URL"
+        bool cancelado "default false"
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at "soft delete"
+    }
+
+    TICKETS {
+        uint id PK
+        uint event_id FK "not null"
+        uint user_id FK "not null, titular actual"
+        enum estado "activo | cancelado | transferido"
+        datetime fecha_compra "not null"
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at "soft delete"
+    }
+
+    WAITLIST_ENTRIES {
+        uint id PK
+        uint event_id FK "not null"
+        uint user_id FK "not null"
+        enum estado "pendiente | asignado | cancelado"
+        datetime fecha_asignacion "nullable"
+        datetime created_at
+        datetime updated_at
+        datetime deleted_at "soft delete"
+    }
