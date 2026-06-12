@@ -120,3 +120,35 @@ func TestLogin_UsuarioNoExiste(t *testing.T) {
 	assert.Nil(t, resp)
 	assert.EqualError(t, err, "credenciales inválidas")
 }
+
+func TestRegister_ErrorAlCrear(t *testing.T) {
+	d := new(mockUserDAO)
+	d.On("FindByEmail", "test@mail.com").Return(nil, gorm.ErrRecordNotFound)
+	d.On("Create", mock.AnythingOfType("*domain.User")).Return(errors.New("db error"))
+
+	svc := services.NewUserService(d)
+	resp, err := svc.Register(domain.RegisterRequest{
+		Nombre:   "Juan",
+		Email:    "test@mail.com",
+		Password: "password123",
+	})
+
+	assert.Nil(t, resp)
+	assert.Error(t, err)
+}
+
+func TestRegister_ErrorInesperadoEnBusqueda(t *testing.T) {
+	d := new(mockUserDAO)
+	// Un error que NO es "registro no encontrado" debe propagarse tal cual.
+	d.On("FindByEmail", "test@mail.com").Return(nil, errors.New("db caída"))
+
+	svc := services.NewUserService(d)
+	resp, err := svc.Register(domain.RegisterRequest{
+		Nombre:   "Juan",
+		Email:    "test@mail.com",
+		Password: "password123",
+	})
+
+	assert.Nil(t, resp)
+	assert.EqualError(t, err, "db caída")
+}

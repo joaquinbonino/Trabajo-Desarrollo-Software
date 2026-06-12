@@ -188,3 +188,43 @@ func TestTransferTicketEndpoint_BodyInvalido(t *testing.T) {
 
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
+
+func TestGetMineEndpoint_ErrorServicio(t *testing.T) {
+	svc := new(mockTicketService)
+	svc.On("GetMyTickets", uint(42)).Return(nil, errors.New("db error"))
+
+	r := setupTicketRouter(controllers.NewTicketController(svc), 42)
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodGet, "/tickets/mine", nil)
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestTransferTicketEndpoint_IDInvalido(t *testing.T) {
+	svc := new(mockTicketService)
+
+	r := setupTicketRouter(controllers.NewTicketController(svc), 42)
+	body, _ := json.Marshal(map[string]string{"destino_email": "otro@mail.com"})
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPut, "/tickets/abc/transfer", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
+func TestTransferTicketEndpoint_ErrorNegocio(t *testing.T) {
+	svc := new(mockTicketService)
+	svc.On("TransferTicket", uint(1), uint(42), domain.TransferTicketRequest{DestinoEmail: "otro@mail.com"}).
+		Return(errors.New("no podés transferirte la entrada a vos mismo"))
+
+	r := setupTicketRouter(controllers.NewTicketController(svc), 42)
+	body, _ := json.Marshal(map[string]string{"destino_email": "otro@mail.com"})
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPut, "/tickets/1/transfer", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}

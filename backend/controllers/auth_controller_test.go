@@ -130,3 +130,15 @@ func TestLoginEndpoint_CredencialesInvalidas(t *testing.T) {
 
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
+
+func TestLoginEndpoint_BodyInvalido(t *testing.T) {
+	svc := new(mockUserService)
+	r := setupRouter(controllers.NewAuthController(svc))
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, "/auth/login", bytes.NewBufferString("{}"))
+	req.Header.Set("Content-Type", "application/json")
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
