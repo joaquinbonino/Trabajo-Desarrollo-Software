@@ -180,3 +180,166 @@ func TestCancelEvent_NoExiste(t *testing.T) {
 
 	assert.EqualError(t, err, "evento no encontrado")
 }
+
+func TestCreateEvent_ErrorDAO(t *testing.T) {
+	d := new(mockEventDAO)
+	d.On("Create", mock.AnythingOfType("*domain.Event")).Return(errors.New("db error"))
+
+	svc := services.NewEventService(d, new(mockTicketDAOForEvent))
+	result, err := svc.CreateEvent(domain.CreateEventRequest{Titulo: "Festival", CapacidadTotal: 10})
+
+	assert.Nil(t, result)
+	assert.Error(t, err)
+}
+
+// UpdateEvent
+
+func TestUpdateEvent_Exitoso(t *testing.T) {
+	event := sampleEvent()
+	event.EntradasVendidas = 10
+	d := new(mockEventDAO)
+	d.On("FindByID", uint(1)).Return(event, nil)
+	d.On("Update", mock.AnythingOfType("*domain.Event")).Return(nil)
+
+	svc := services.NewEventService(d, new(mockTicketDAOForEvent))
+	result, err := svc.UpdateEvent(1, domain.UpdateEventRequest{
+		Titulo:         "Nuevo título",
+		Descripcion:    "Nueva descripción",
+		Categoria:      "Teatro",
+		Duracion:       120,
+		CapacidadTotal: 150,
+		Foto:           "foto.jpg",
+		FechaHora:      time.Now().Add(72 * time.Hour),
+	})
+
+	assert.NoError(t, err)
+	assert.Equal(t, "Nuevo título", result.Titulo)
+	assert.Equal(t, "Teatro", result.Categoria)
+	assert.Equal(t, 150, result.CapacidadTotal)
+}
+
+func TestUpdateEvent_NoExiste(t *testing.T) {
+	d := new(mockEventDAO)
+	d.On("FindByID", uint(99)).Return(nil, gorm.ErrRecordNotFound)
+
+	svc := services.NewEventService(d, new(mockTicketDAOForEvent))
+	result, err := svc.UpdateEvent(99, domain.UpdateEventRequest{Titulo: "x"})
+
+	assert.Nil(t, result)
+	assert.EqualError(t, err, "evento no encontrado")
+}
+
+func TestUpdateEvent_EventoCancelado(t *testing.T) {
+	event := sampleEvent()
+	event.Cancelado = true
+	d := new(mockEventDAO)
+	d.On("FindByID", uint(1)).Return(event, nil)
+
+	svc := services.NewEventService(d, new(mockTicketDAOForEvent))
+	result, err := svc.UpdateEvent(1, domain.UpdateEventRequest{Titulo: "x"})
+
+	assert.Nil(t, result)
+	assert.EqualError(t, err, "no se puede modificar un evento cancelado")
+}
+
+func TestUpdateEvent_CapacidadMenorAVendidas(t *testing.T) {
+	event := sampleEvent()
+	event.EntradasVendidas = 50
+	d := new(mockEventDAO)
+	d.On("FindByID", uint(1)).Return(event, nil)
+
+	svc := services.NewEventService(d, new(mockTicketDAOForEvent))
+	result, err := svc.UpdateEvent(1, domain.UpdateEventRequest{CapacidadTotal: 10})
+
+	assert.Nil(t, result)
+	assert.EqualError(t, err, "la capacidad no puede ser menor a las entradas ya vendidas")
+}
+
+func TestUpdateEvent_ErrorDAO(t *testing.T) {
+	event := sampleEvent()
+	d := new(mockEventDAO)
+	d.On("FindByID", uint(1)).Return(event, nil)
+	d.On("Update", mock.AnythingOfType("*domain.Event")).Return(errors.New("db error"))
+
+	svc := services.NewEventService(d, new(mockTicketDAOForEvent))
+	result, err := svc.UpdateEvent(1, domain.UpdateEventRequest{Titulo: "x"})
+
+	assert.Nil(t, result)
+	assert.Error(t, err)
+}
+
+// ListAllEvents
+
+func TestListAllEvents_Exitoso(t *testing.T) {
+	cancelado := sampleEvent()
+	cancelado.Cancelado = true
+	d := new(mockEventDAO)
+	d.On("FindAllAdmin").Return([]domain.Event{*sampleEvent(), *cancelado}, nil)
+
+	svc := services.NewEventService(d, new(mockTicketDAOForEvent))
+	result, err := svc.ListAllEvents()
+
+	assert.NoError(t, err)
+	assert.Len(t, result, 2)
+}
+
+func TestListAllEvents_ErrorDAO(t *testing.T) {
+	d := new(mockEventDAO)
+	d.On("FindAllAdmin").Return(nil, errors.New("db error"))
+
+	svc := services.NewEventService(d, new(mockTicketDAOForEvent))
+	result, err := svc.ListAllEvents()
+
+	assert.Nil(t, result)
+	assert.Error(t, err)
+}
+
+// GetEventReport
+
+func TestGetEventReport_Exitoso(t *testing.T) {
+	event := sampleEvent()
+	event.EntradasVendidas = 2
+	ed := new(mockEventDAO)
+	td := new(mockTicketDAOForEvent)
+	ed.On("FindByID", uint(1)).Return(event, nil)
+	tickets := []domain.Ticket{
+		{UserID: 10, Estado: "activo", FechaCompra: time.Now(), User: domain.User{Nombre: "Ana", Email: "ana@mail.com"}},
+		{UserID: 11, Estado: "cancelado", FechaCompra: time.Now(), User: domain.User{Nombre: "Beto", Email: "beto@mail.com"}},
+	}
+	td.On("FindByEventID", uint(1)).Return(tickets, nil)
+
+	svc := services.NewEventService(ed, td)
+	report, err := svc.GetEventReport(1)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 100, report.CapacidadTotal)
+	assert.Equal(t, 2, report.EntradasVendidas)
+	assert.Equal(t, 98, report.EntradasDisponibles)
+	assert.Len(t, report.Compradores, 2)
+	assert.Equal(t, "Ana", report.Compradores[0].Nombre)
+}
+
+func TestGetEventReport_NoExiste(t *testing.T) {
+	ed := new(mockEventDAO)
+	ed.On("FindByID", uint(99)).Return(nil, gorm.ErrRecordNotFound)
+
+	svc := services.NewEventService(ed, new(mockTicketDAOForEvent))
+	report, err := svc.GetEventReport(99)
+
+	assert.Nil(t, report)
+	assert.EqualError(t, err, "evento no encontrado")
+}
+
+func TestGetEventReport_ErrorTicketDAO(t *testing.T) {
+	event := sampleEvent()
+	ed := new(mockEventDAO)
+	td := new(mockTicketDAOForEvent)
+	ed.On("FindByID", uint(1)).Return(event, nil)
+	td.On("FindByEventID", uint(1)).Return([]domain.Ticket{}, errors.New("db error"))
+
+	svc := services.NewEventService(ed, td)
+	report, err := svc.GetEventReport(1)
+
+	assert.Nil(t, report)
+	assert.Error(t, err)
+}

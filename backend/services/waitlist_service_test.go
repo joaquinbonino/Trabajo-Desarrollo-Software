@@ -68,6 +68,20 @@ func TestJoinWaitlist_HayCupo(t *testing.T) {
 	assert.EqualError(t, err, "todavía hay entradas disponibles, comprá directamente")
 }
 
+func TestJoinWaitlist_ErrorAlBuscarAnotacion(t *testing.T) {
+	wd := new(mockWaitlistDAO)
+	ed := new(mockEventDAO)
+
+	event := &domain.Event{CapacidadTotal: 10, EntradasVendidas: 10}
+	ed.On("FindByID", uint(1)).Return(event, nil)
+	wd.On("FindPendingByEventAndUser", uint(1), uint(42)).Return(nil, errors.New("db error"))
+
+	svc := services.NewWaitlistService(wd, ed)
+	err := svc.JoinWaitlist(42, 1)
+
+	assert.Error(t, err)
+}
+
 func TestJoinWaitlist_YaAnotado(t *testing.T) {
 	wd := new(mockWaitlistDAO)
 	ed := new(mockEventDAO)

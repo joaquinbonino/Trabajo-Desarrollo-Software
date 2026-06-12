@@ -349,3 +349,200 @@ func TestTransferTicket_TransferenciaASiMismo(t *testing.T) {
 
 	assert.EqualError(t, err, "no podés transferirte la entrada a vos mismo")
 }
+
+func TestTransferTicket_NoActiva(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	ticket := activeTicket(1, 42, 1)
+	ticket.Estado = "cancelado"
+	td.On("FindByID", uint(1)).Return(ticket, nil)
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	err := svc.TransferTicket(1, 42, domain.TransferTicketRequest{DestinoEmail: "destino@mail.com"})
+
+	assert.EqualError(t, err, "la entrada no está activa")
+}
+
+func TestTransferTicket_ErrorAlActualizar(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	ticket := activeTicket(1, 42, 1)
+	destUser := &domain.User{Email: "destino@mail.com"}
+	destUser.ID = 99
+
+	td.On("FindByID", uint(1)).Return(ticket, nil)
+	ud.On("FindByEmail", "destino@mail.com").Return(destUser, nil)
+	td.On("Update", mock.AnythingOfType("*domain.Ticket")).Return(errors.New("db error"))
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	err := svc.TransferTicket(1, 42, domain.TransferTicketRequest{DestinoEmail: "destino@mail.com"})
+
+	assert.Error(t, err)
+}
+
+// Ramas de error adicionales
+
+func TestBuyTicket_ErrorAlCrear(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	event := &domain.Event{CapacidadTotal: 10, EntradasVendidas: 1}
+	ed.On("FindByID", uint(1)).Return(event, nil)
+	td.On("Create", mock.AnythingOfType("*domain.Ticket")).Return(errors.New("db error"))
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	resp, err := svc.BuyTicket(42, domain.BuyTicketRequest{EventID: 1})
+
+	assert.Nil(t, resp)
+	assert.Error(t, err)
+}
+
+func TestBuyTicket_ErrorAlActualizarEvento(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	event := &domain.Event{CapacidadTotal: 10, EntradasVendidas: 1}
+	ed.On("FindByID", uint(1)).Return(event, nil)
+	td.On("Create", mock.AnythingOfType("*domain.Ticket")).Return(nil)
+	ed.On("Update", mock.AnythingOfType("*domain.Event")).Return(errors.New("db error"))
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	resp, err := svc.BuyTicket(42, domain.BuyTicketRequest{EventID: 1})
+
+	assert.Nil(t, resp)
+	assert.Error(t, err)
+}
+
+func TestCancelTicket_EventoNoExiste(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	ticket := activeTicket(1, 42, 1)
+	td.On("FindByID", uint(1)).Return(ticket, nil)
+	ed.On("FindByID", uint(1)).Return(nil, gorm.ErrRecordNotFound)
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	err := svc.CancelTicket(1, 42)
+
+	assert.EqualError(t, err, "evento no encontrado")
+}
+
+func TestCancelTicket_ErrorAlActualizarTicket(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	ticket := activeTicket(1, 42, 1)
+	event := &domain.Event{CapacidadTotal: 10, EntradasVendidas: 3}
+	td.On("FindByID", uint(1)).Return(ticket, nil)
+	ed.On("FindByID", uint(1)).Return(event, nil)
+	td.On("Update", mock.AnythingOfType("*domain.Ticket")).Return(errors.New("db error"))
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	err := svc.CancelTicket(1, 42)
+
+	assert.Error(t, err)
+}
+
+func TestCancelTicket_NoEncontrada(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	td.On("FindByID", uint(99)).Return(nil, gorm.ErrRecordNotFound)
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	err := svc.CancelTicket(99, 42)
+
+	assert.EqualError(t, err, "entrada no encontrada")
+}
+
+func TestCancelTicket_ErrorAlConsultarListaDeEspera(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	ticket := activeTicket(1, 42, 1)
+	event := &domain.Event{CapacidadTotal: 10, EntradasVendidas: 3}
+	td.On("FindByID", uint(1)).Return(ticket, nil)
+	ed.On("FindByID", uint(1)).Return(event, nil)
+	td.On("Update", mock.AnythingOfType("*domain.Ticket")).Return(nil)
+	wd.On("FindFirstPending", uint(1)).Return(nil, errors.New("db error"))
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	err := svc.CancelTicket(1, 42)
+
+	assert.Error(t, err)
+}
+
+func TestCancelTicket_ErrorAlCrearTicketDeEspera(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	ticket := activeTicket(1, 42, 1)
+	event := &domain.Event{CapacidadTotal: 10, EntradasVendidas: 10}
+	entry := &domain.WaitlistEntry{EventID: 1, UserID: 77, Estado: "pendiente"}
+	td.On("FindByID", uint(1)).Return(ticket, nil)
+	ed.On("FindByID", uint(1)).Return(event, nil)
+	td.On("Update", mock.AnythingOfType("*domain.Ticket")).Return(nil)
+	wd.On("FindFirstPending", uint(1)).Return(entry, nil)
+	td.On("Create", mock.AnythingOfType("*domain.Ticket")).Return(errors.New("db error"))
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	err := svc.CancelTicket(1, 42)
+
+	assert.Error(t, err)
+}
+
+func TestCancelTicket_ErrorAlActualizarAnotacion(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	ticket := activeTicket(1, 42, 1)
+	event := &domain.Event{CapacidadTotal: 10, EntradasVendidas: 10}
+	entry := &domain.WaitlistEntry{EventID: 1, UserID: 77, Estado: "pendiente"}
+	td.On("FindByID", uint(1)).Return(ticket, nil)
+	ed.On("FindByID", uint(1)).Return(event, nil)
+	td.On("Update", mock.AnythingOfType("*domain.Ticket")).Return(nil)
+	wd.On("FindFirstPending", uint(1)).Return(entry, nil)
+	td.On("Create", mock.AnythingOfType("*domain.Ticket")).Return(nil)
+	wd.On("Update", mock.AnythingOfType("*domain.WaitlistEntry")).Return(errors.New("db error"))
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	err := svc.CancelTicket(1, 42)
+
+	assert.Error(t, err)
+}
+
+func TestTransferTicket_NoEncontrada(t *testing.T) {
+	td := new(mockTicketDAO)
+	ed := new(mockEventDAO)
+	ud := new(mockUserDAO)
+	wd := new(mockWaitlistDAO)
+
+	td.On("FindByID", uint(99)).Return(nil, gorm.ErrRecordNotFound)
+
+	svc := services.NewTicketService(td, ed, ud, wd)
+	err := svc.TransferTicket(99, 42, domain.TransferTicketRequest{DestinoEmail: "destino@mail.com"})
+
+	assert.EqualError(t, err, "entrada no encontrada")
+}
